@@ -21,16 +21,27 @@ class LayaApp {
 
 
     // 加载资源
-    beginLoad() {
-        console.log("LayaApp - 正在加载资源");
+    beginLoad() { 
+        console.log("LayaApp - 正在加载资源...");
         Laya.loader.load("res/atlas/comp.atlas", Laya.Handler.create(this, this.onLoaded), null, Laya.Loader.ATLAS);
     }
     // 加载完成回调
     onLoaded() {
         console.log("LayaApp - 资源加载完毕");
+        if (!LayaApp.socket) {
+            var addr = "ws://localhost:8888";
+            LayaApp.socket = io.connect(addr);
+        }
+        LayaApp.socket.on('connect', this.onConnected);
+    }
+
+    onConnected () {
+        console.log("LayaApp - socket连接成功 onConnected")
         // 启动游戏界面
-        LayaApp.gameStartView = new GameStartView()
-        Laya.stage.addChild(LayaApp.gameStartView)
+        if (!LayaApp.gameStartView) {
+            LayaApp.gameStartView = new GameStartView()
+            Laya.stage.addChild(LayaApp.gameStartView)
+        }
     }
 }
 

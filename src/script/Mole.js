@@ -1,5 +1,5 @@
 class Mole {
-    constructor (mole, downY, hitCallBack) {
+    constructor (mole, downY, hitCallBack, index) {
         this.mole = mole;
         this.downY = downY;
         this.hitCallBack = hitCallBack;
@@ -9,24 +9,32 @@ class Mole {
         this.scoreImg = this.mole.getChildByName("score");;
         this.scoreY = this.scoreImg.y;
         this.normalState.on(Laya.Event.CLICK, this, this.hit);
+        this.count = 0;
+        this.socket = LayaApp.socket;
+        this.index = index;
         this.reset();
     }
 
     reset () {
+        // console.log('Mole - 重置地鼠');
         this.isActive = false;
         this.isShow = false;
         this.isHit = false;
         this.normalState.visible = false;
         this.hitState.visible = false;
-        this.type = Math.random() <= 0.5 ? 1 : 2;
-        this.normalState.skin = "comp/mouse_normal_" + this.type + ".png";
-        this.hitState.skin = "comp/mouse_hit_" + this.type + ".png";
-        this.scoreImg.skin = "comp/score_" + this.type + ".png";
         this.scoreImg.visible = false;
     }
 
-    show () {
-        console.log('Mole - show');
+    show (type) {
+        if (this.isActive) {
+             //地鼠正在跳出，直接return，不要反复调用
+             return;
+        }
+        console.log('showMole:', {index : this.index, type : type});
+        this.type = type;// Math.random() <= 0.5 ? 1 : 2;
+        this.normalState.skin = "comp/mouse_normal_" + this.type + ".png";
+        this.hitState.skin = "comp/mouse_hit_" + this.type + ".png";
+        this.scoreImg.skin = "comp/score_" + this.type + ".png";
         this.isActive = true;
         this.isShow = true;
         this.normalState.y = this.downY;
@@ -40,38 +48,44 @@ class Mole {
     }
 
     showComplete () {
-        console.log('Mole - showComplete');
+        // console.log('Mole - 地鼠跳出来完毕');
         if (this.isShow && !this.isHit) {
             Laya.timer.once(2000, this, this.hide);
         }
     }
 
-    hide() {
+    hide () {
+        // console.log('Mole - 地鼠即将进洞');
         if (this.isShow && !this.isHit) {
             this.isShow = false;
             Laya.Tween.to(this.normalState,{y:this.downY},
             								300,
             								Laya.Ease.backIn,
             								Laya.Handler.create(this,this.reset));
-        } 
+        }  
     }
 
     hit () {
-        console.log('Mole - hit');
-        if (this.isShow && !this.isHit) {
+         if (this.isActive) {
+            LayaApp.socket.emit('hit', this.index);
+         } 
+    }
+
+    serverSayHit () {
+        if (this.isActive){
+            this.normalState.visible = false;
+            this.hitState.visible =true;
             this.isHit = true;
             this.isShow = false;
             Laya.timer.clear(this, this.hide);
-            this.normalState.visible = false;
-            this.hitState.visible =true;
-            Laya.timer.once(500, this, this.reset);
+            Laya.timer.once(1000, this, this.reset);
             this.hitCallBack.runWith(this.type);
             this.showScore();
         }
     }
 
     showScore () {
-        console.log('Mole - showScore');
+        // console.log('Mole - showScore');
         this.scoreImg.visible = true;
         this.scoreImg.y = this.scoreY + 30;
         this.scoreImg.scale(0, 0);

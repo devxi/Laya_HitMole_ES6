@@ -12,14 +12,14 @@ class GameControl {
         this.gameView.timeBar.value = 1; 
         var aMoleBox = this.gameView.getChildByName("item0");
         this.hitCallBack = Laya.Handler.create(this, this.setScore, null, false);
-        this.mole =  new Mole(aMoleBox, 21, this.hitCallBack);
+        // this.mole =  new Mole(aMoleBox, 21, this.hitCallBack);
 
         var moleBox;
         var data = {};
 
         for (let i = 0; i < this.moleNum; i++) {
             moleBox = this.gameView.getChildByName("item" + i);
-            this.moles.push(new Mole(moleBox, 20, this.hitCallBack));
+            this.moles.push(new Mole(moleBox, 20, this.hitCallBack, i));
             data["item" + i] = { index : 0 };
         }
         
@@ -31,7 +31,15 @@ class GameControl {
         this.Hammer.start();
 
         this.gameView.scoreNum.dataSource = data;
-        Laya.timer.loop(1000, this, this.isShow);
+        // Laya.timer.loop(300, this, this.isShow);
+        LayaApp.socket.on('showMole', (data) => {
+            this.showMole(data);
+        });
+       LayaApp.socket.on('hit', (data) => {
+           console.log("hit:", data);
+           const index = data.index;
+           this.moles[index].serverSayHit();
+       });
     }
 
     gameOver() {
@@ -52,7 +60,7 @@ class GameControl {
     }
 
     updateScorceUI () {
-        console.log("updateScorceUI:", this.score)
+        // console.log("updateScorceUI:", this.score)
         var data = {}
         var temp = this.score;
         for (let i = 9; i >= 0; i--) {
@@ -63,12 +71,34 @@ class GameControl {
     }
 
     isShow () {
-        this.gameView.timeBar.value -= (1 / 10);
+        this.gameView.timeBar.value -= (1 / 1000);
         if (this.gameView.timeBar.value <= 0) {
             this.gameOver();
             return;
         }
-        var index = Math.floor(Math.random() * this.moleNum);
-        this.moles[index].show();
+
+        var count = Math.floor(Math.random() * 4)
+        count = count == 0 ? 1 : count;
+        var array = new Array(8)
+         .fill(0)
+         .map((v,i)=>i+1)
+         .sort(()=>0.5 - Math.random())
+         .filter((v,i)=>i<count);
+
+        array.forEach(function(element) {
+            this.moles[element].show();
+        }, this);
+
+        console.log(count, array);
+    }
+
+    showMole (data) {
+        const index = data.index;
+        const type = data.type;
+        if (index >= 0 && index < this.moleNum) {
+            this.moles[index].show(type);
+        } else {
+            console.log('moleId is Invaild !!!');
+        }
     }
 }

@@ -7,6 +7,9 @@ class Hammer extends ui.HammerUI {
         Laya.Mouse.hide();
         Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.onMouseMove);
         Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.onMouseDown);
+        LayaApp.socket.on("hammerMove", (pos) => {
+            this.onServerSayHammerMove(pos);
+        });
     }
 
     stop () {
@@ -14,12 +17,22 @@ class Hammer extends ui.HammerUI {
         Laya.stage.offAll();
     }
 
+    onServerSayHammerMove (pos) {
+         this.pos(pos.x, pos.y);
+    }
+
     onMouseMove () {
         this.pos(Laya.stage.mouseX, Laya.stage.mouseY);
+        LayaApp.socket.emit("hammerMove",{
+            x : Laya.stage.mouseX,
+            y : Laya.stage.mouseY
+        });
     }
 
     onMouseDown () {
         this.hit.play(0, false);
+        //移动端点击时也应该移动锤子
+        this.onMouseMove();
     }
 
 }
