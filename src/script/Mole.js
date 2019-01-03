@@ -30,7 +30,6 @@ class Mole {
              //地鼠正在跳出，直接return，不要反复调用
              return;
         }
-        console.log('showMole:', {index : this.index, type : type});
         this.type = type;// Math.random() <= 0.5 ? 1 : 2;
         this.normalState.skin = "comp/mouse_normal_" + this.type + ".png";
         this.hitState.skin = "comp/mouse_hit_" + this.type + ".png";

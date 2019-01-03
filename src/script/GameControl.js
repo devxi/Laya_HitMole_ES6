@@ -1,6 +1,83 @@
 class GameControl {
     constructor () {
+        this.players = [];
+    }
 
+    ready () {
+        LayaApp.socket.on('selfJoinGame', (player) => {
+            this.onSelfJoin(player);
+        }); 
+        LayaApp.socket.on('playerJoinGame', (player) => {
+            this.onPlayerJoinGame(player);
+        })
+        LayaApp.socket.on('otherHammerMove', (data) => {
+            this.onOtherHammerMove(data);
+        });
+        LayaApp.socket.on("otherHammerHit", (data) => {
+            this.onOtherHammerHit(data);
+        });
+        LayaApp.socket.on('playerLeave', (data) => {
+            this.onPlayerLeave(data);
+        });
+        LayaApp.socket.emit('ready');
+    }
+
+    /*
+    当自己加入时调用
+    */
+    onSelfJoin(player) {
+        LayaApp.gameStartView.removeSelf();
+		Laya.stage.addChild(LayaApp.gameView);
+        const playId = player.id;
+        this.me = new Player(playId);
+        this.players.push(this.me );
+        if (!this.Hammer) {
+            this.Hammer = this.me.hammer;
+            Laya.stage.addChild(this.Hammer);
+        }
+        this.gameStart();
+    }
+
+    /*
+    当其他玩家加入时调用
+    */
+    onPlayerJoinGame(player) {
+        console.log('GameControl - onPlayerJoinGame :', player);
+        const playId = player.id;
+        var player = new Player(playId);
+        Laya.stage.addChild(player.hammer);
+        this.players.push(player);
+    }
+
+    onOtherHammerMove (data) {
+        const playerId = data.id;
+        const pos = data.pos;
+        this.players.forEach((player) => {
+            if (playerId === player.id) {
+                player.hammer.onServerSayHammerMove(pos)
+            }
+        });
+    }
+
+    onOtherHammerHit(data) {
+        const playerId = data.id;
+        this.players.forEach((player) => {
+            if (playerId === player.id) {
+                player.hammer.onServerSayHammerHit()
+            }
+        });
+    }
+
+    onPlayerLeave(data) {
+        console.log('onPlayerLeave 玩家离开游戏：', data);
+        const playerId = data.id;
+        for(let i = 0; i < this.players.length; i++ ) {
+            var player = this.players[i];
+            if (playerId == player.id) {
+                player.hammer.removeSelf();
+                this.players.splice(i, 1);
+            }
+        }
     }
 
     gameStart() {
@@ -22,22 +99,16 @@ class GameControl {
             this.moles.push(new Mole(moleBox, 20, this.hitCallBack, i));
             data["item" + i] = { index : 0 };
         }
-        
-        if (!this.Hammer) {
-            this.Hammer = new Hammer();
-            Laya.stage.addChild(this.Hammer);
-        }
 
         this.Hammer.start();
 
         this.gameView.scoreNum.dataSource = data;
-        // Laya.timer.loop(300, this, this.isShow);
         LayaApp.socket.on('showMole', (data) => {
             this.showMole(data);
         });
        LayaApp.socket.on('hit', (data) => {
-           console.log("hit:", data);
            const index = data.index;
+           const playerId = data.playerId;
            this.moles[index].serverSayHit();
        });
     }

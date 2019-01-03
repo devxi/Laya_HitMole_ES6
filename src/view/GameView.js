@@ -14,6 +14,6 @@ class GameView extends ui.GameUI {
 		if (!LayaApp.gameControl) {
 			LayaApp.gameControl = new GameControl();
 		}
-		LayaApp.gameControl.gameStart();
+		LayaApp.gameControl.ready();
 	}
 }
