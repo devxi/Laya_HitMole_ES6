@@ -1,22 +1,26 @@
+import Player from "./player.js";
+
 var app = require('express')()
   , server = require('http').createServer(app)
   , io = require('socket.io').listen(server);
 
-server.listen(8888, () => {
-  console.log(`App listening at port 3389`)
+server.listen(8888, '0.0.0.0', () => {
+  Log(`App listening at port 8888`)
 });
 
 app.get('/', function (req, res) {
   res.sendfile(__dirname + '/index.html');
 });
 
+
+
 var players = [];
-var playerCount = 0;
+var id = 0;
 
 io.sockets.on('connection', function (socket) {
-  playerCount++;
+  Log(`[${socket.id}] connected`)
   socket.on('ready', () => {
-      var player = { id : playerCount, socketId : socket.id ,pos : {x:0,y:0}};
+      const player = new Player(++id, socket.id, {x:0,y:0})
       players.push(player);
       socket.emit('selfJoinGame', { player, players});
       socket.broadcast.emit('playerJoinGame', player);
@@ -42,7 +46,7 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.emit('otherHammerHit', data);
    });
   socket.on('disconnect', (reason) => {
-    console.log("[" + socket.id + "]" , "disconnect resson:", reason);
+    Log(`[${socket.id}] was disconnected reason:${reason}`);
     if (reason === 'io server disconnect') {
     }
     for(let i = 0; i < players.length; i++) {
@@ -68,10 +72,35 @@ setInterval( () => {
   .sort(() => 0.5 - Math.random())
   .filter((v, i) => i< count);
   array.forEach( function(index) {
+      const type =  Math.random() <= 0.5 ? 1 : 2
       io.sockets.emit('showMole', {
-          index,
-          type : Math.random() <= 0.5 ? 1 : 2
-      });      
+          index, type
+      });   
+      Log(`显示地鼠 索引 ：${index}  类型： ${type}`);
 }, this);
 }, 1000);
  
+function getNowFormatDate () {
+  var date = new Date();
+  var seperator1 = "-";
+  var seperator2 = ":";
+  var year = date.getFullYear();
+  var month = date.getMonth() + 1;
+  var strDate = date.getDate();
+  if (month >= 1 && month <= 9) {
+      month = "0" + month;
+  }
+  if (strDate >= 0 && strDate <= 9) {
+      strDate = "0" + strDate;
+  }
+  var currentdate = year + seperator1 + month + seperator1 + strDate +
+                    " " + date.getHours() + seperator2 + date.getMinutes() +
+                     seperator2 + date.getSeconds();
+  return currentdate;
+};
+
+function Log(info) {
+  console.log(getNowFormatDate() + " ", info);
+}
+Log(111);
+var index = 1;

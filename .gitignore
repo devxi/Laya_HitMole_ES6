@@ -2,3 +2,4 @@ release/
 bin/js
 .laya/chrome/
 Server/node_modules/
+Server/dist/
