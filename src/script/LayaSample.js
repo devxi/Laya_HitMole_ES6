@@ -30,6 +30,7 @@ class LayaApp {
         console.log("LayaApp - 资源加载完毕");
         if (!LayaApp.socket) {
             var addr = "ws://localhost:8888";
+            addr = "ws://47.105.147.240:8888/"
             LayaApp.socket = io.connect(addr);
         }
         LayaApp.socket.on('connect', this.onConnected);
