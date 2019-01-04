@@ -4,8 +4,15 @@ class GameControl {
     }
 
     ready () {
-        LayaApp.socket.on('selfJoinGame', (player) => {
+        LayaApp.socket.on('selfJoinGame', (data) => {
+            const player = data.player;
+            const players = data.players;
             this.onSelfJoin(player);
+            players.forEach(p => {
+                if(p.id != player.id) {
+                    this.playerJoin(p);
+                }
+            });
         }); 
         LayaApp.socket.on('playerJoinGame', (player) => {
             this.onPlayerJoinGame(player);
@@ -41,12 +48,18 @@ class GameControl {
     /*
     当其他玩家加入时调用
     */
-    onPlayerJoinGame(player) {
+    onPlayerJoinGame (player) {
         console.log('GameControl - onPlayerJoinGame :', player);
-        const playId = player.id;
-        var player = new Player(playId);
-        Laya.stage.addChild(player.hammer);
-        this.players.push(player);
+        this.playerJoin(player);
+    }
+
+    playerJoin (p) {      
+        const playId = p.id;
+        var nativePlayer = new Player(playId);
+        nativePlayer.pos = p.pos;
+        Laya.stage.addChild(nativePlayer.hammer);
+        nativePlayer.hammer.pos(p.pos.x, p.pos.y);
+        this.players.push(nativePlayer);
     }
 
     onOtherHammerMove (data) {
